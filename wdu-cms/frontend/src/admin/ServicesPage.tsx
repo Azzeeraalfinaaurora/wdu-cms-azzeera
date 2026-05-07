@@ -9,6 +9,7 @@ interface Service {
   description: string;
   icon: string | null;
   isActive: boolean;
+  order: number;
 }
 
 export default function ServicesPage() {
@@ -22,6 +23,8 @@ export default function ServicesPage() {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   useEffect(() => { fetchServices(); }, []);
 
@@ -94,12 +97,44 @@ export default function ServicesPage() {
     }
   };
 
+  const handleReorder = async (draggedId: string, targetId: string) => {
+    const draggedIndex = services.findIndex(s => s.id === draggedId);
+    const targetIndex = services.findIndex(s => s.id === targetId);
+    
+    if (draggedIndex === -1 || targetIndex === -1) return;
+    
+    const newServices = [...services];
+    const [draggedItem] = newServices.splice(draggedIndex, 1);
+    newServices.splice(targetIndex, 0, draggedItem);
+    
+    // Update order values
+    const orders = newServices.map((service, index) => ({
+      id: service.id,
+      order: index + 1
+    }));
+    
+    setServices(newServices);
+    
+    try {
+      await api.patch('/services/reorder', { orders });
+      setToast('Urutan layanan diperbarui');
+    } catch (error) {
+      console.error('Failed to reorder services:', error);
+      setToast('Gagal mengubah urutan');
+      fetchServices(); // Revert on error
+    }
+  };
+
   return (
     <div className="p-8 md:p-12 space-y-12 max-w-[1600px] mx-auto pb-20">
       <div className="flex justify-between items-center bg-white dark:bg-emerald-900/10 p-8 rounded-2xl emerald-glow border border-outline-variant/10">
         <div>
           <h1 className="text-2xl font-extrabold text-emerald-900 dark:text-white">Layanan</h1>
           <p className="text-sm text-outline font-medium mt-1">Manajemen solusi & kapabilitas untuk website Anda.</p>
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-widest mt-2 flex items-center gap-1">
+            <span className="material-symbols-outlined text-sm">drag_indicator</span>
+            Drag & Drop untuk mengatur urutan
+          </p>
         </div>
         <button 
           onClick={() => openDrawer()}
@@ -119,8 +154,30 @@ export default function ServicesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="p-8 rounded-[2.5rem] border transition-all duration-500 group relative overflow-hidden bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:-translate-y-2 dark:hover:border-primary/30"
+            draggable
+            onDragStart={() => setDragId(service.id)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOverId(service.id);
+            }}
+            onDragLeave={() => setDragOverId(null)}
+            onDrop={() => {
+              if (dragId && dragId !== service.id) {
+                handleReorder(dragId, service.id);
+              }
+              setDragId(null);
+              setDragOverId(null);
+            }}
+            onDragEnd={() => {
+              setDragId(null);
+              setDragOverId(null);
+            }}
+            className={`p-8 rounded-[2.5rem] border transition-all duration-500 group relative overflow-hidden bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 shadow-sm hover:shadow-2xl hover:-translate-y-2 dark:hover:border-primary/30 ${dragOverId === service.id ? 'border-primary border-2 scale-105' : ''} ${dragId === service.id ? 'opacity-50' : ''}`}
           >
+            <div className="absolute top-6 left-6 cursor-grab active:cursor-grabbing z-20">
+              <span className="material-symbols-outlined text-zinc-300 dark:text-zinc-600 hover:text-primary transition-colors">drag_indicator</span>
+            </div>
+            
             <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20">
               <button 
                 onClick={() => openDrawer(service)} 
