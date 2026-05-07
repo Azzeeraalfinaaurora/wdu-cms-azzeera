@@ -49,6 +49,7 @@ async function main() {
     { key: 'instagram_url', value: 'https://www.instagram.com/wahanadatautama' },
     { key: 'site_footer_copyright', value: '© 2026 PT. Wahana Data Utama. All rights reserved.' },
     { key: 'company_profile_pdf', value: '' },
+    { key: 'company_address', value: 'Blok AE No. 01, Jl. Terapi Raya, RT 03/19, Menteng\nKec. Bogor Barat, Kota Bogor, Jawa Barat 16111' },
   ];
 
   for (const config of defaultConfigs) {

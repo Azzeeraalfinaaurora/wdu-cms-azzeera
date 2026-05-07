@@ -18,7 +18,7 @@ export default function ConfigPage() {
     instagram_url: 'https://www.instagram.com/wahanadatautama',
     site_footer_copyright: '© 2026 PT. Wahana Data Utama. All rights reserved.',
     company_profile_pdf: '',
-    company_address: ''
+    company_address: 'Blok AE No. 01, Jl. Terapi Raya, RT 03/19, Menteng\nKec. Bogor Barat, Kota Bogor, Jawa Barat 16111'
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
