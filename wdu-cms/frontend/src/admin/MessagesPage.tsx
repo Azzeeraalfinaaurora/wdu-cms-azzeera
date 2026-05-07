@@ -95,14 +95,16 @@ export default function MessagesPage() {
   };
 
   const handleReplyEmail = (email: string, subject: string, name: string) => {
+    if (!email) {
+      setToast('Email pengirim tidak tersedia');
+      return;
+    }
     const mailSubject = encodeURIComponent(`Re: ${subject} - Wahana Data Utama`);
     const body = encodeURIComponent(`Halo ${name},\n\nTerima kasih telah menghubungi kami.\n\n`);
     const mailtoUrl = `mailto:${email}?subject=${mailSubject}&body=${body}`;
     
-    // Create hidden link and click it (most robust method for mailto)
-    const link = document.createElement('a');
-    link.href = mailtoUrl;
-    link.click();
+    // Open default email client
+    window.location.href = mailtoUrl;
   };
   const { user } = useAuthStore();
   

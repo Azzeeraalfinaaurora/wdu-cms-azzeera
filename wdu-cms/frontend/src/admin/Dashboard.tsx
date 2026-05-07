@@ -107,13 +107,16 @@ export default function Dashboard() {
   };
 
   const handleReplyEmail = (email: string, subject: string, name: string) => {
+    if (!email) {
+      setToast('Email pengirim tidak tersedia');
+      return;
+    }
     const mailSubject = encodeURIComponent(`Re: ${subject} - Wahana Data Utama`);
     const body = encodeURIComponent(`Halo ${name},\n\nTerima kasih telah menghubungi kami.\n\n`);
     const mailtoUrl = `mailto:${email}?subject=${mailSubject}&body=${body}`;
-
-    const link = document.createElement('a');
-    link.href = mailtoUrl;
-    link.click();
+    
+    // Open default email client
+    window.location.href = mailtoUrl;
   };
 
   const handleDelete = async (id: string) => {
@@ -219,16 +222,16 @@ export default function Dashboard() {
             </button>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-surface-container-low dark:bg-emerald-900/20 text-outline text-[10px] uppercase tracking-widest font-extrabold">
-                  <th className="px-8 py-4">Pengirim</th>
-                  <th className="px-8 py-4">Subjek</th>
-                  <th className="px-8 py-4 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-container-high dark:divide-emerald-900/30">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-surface-container-low dark:bg-emerald-900/20 text-outline text-[10px] uppercase tracking-widest font-extrabold">
+                        <th className="px-8 py-4">Pengirim</th>
+                        <th className="px-8 py-4">Waktu</th>
+                        <th className="px-8 py-4 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-container-high dark:divide-emerald-900/30">
                 {recentMessages.length > 0 ? recentMessages.map((msg) => (
                   <tr 
                     key={msg.id} 
@@ -249,8 +252,7 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="px-8 py-5">
-                       <p className="text-sm text-on-surface-variant font-bold truncate max-w-[200px]">{msg.subject}</p>
-                        <p className="text-[10px] text-outline font-medium">{new Date(msg.createdAt).toLocaleDateString('en-GB')} {String(new Date(msg.createdAt).getHours()).padStart(2,'0')}:{String(new Date(msg.createdAt).getMinutes()).padStart(2,'0')}</p>
+                       <p className="text-sm text-on-surface-variant font-bold">{new Date(msg.createdAt).toLocaleDateString('en-GB')} {String(new Date(msg.createdAt).getHours()).padStart(2,'0')}:{String(new Date(msg.createdAt).getMinutes()).padStart(2,'0')}</p>
                     </td>
                     <td className="px-8 py-5 text-right relative">
                       <button 
@@ -268,13 +270,14 @@ export default function Dashboard() {
                                 initial={{ opacity: 0, x: -10, scale: 0.95 }}
                                 animate={{ opacity: 1, x: 0, scale: 1 }}
                                 exit={{ opacity: 0, x: -10, scale: 0.95 }}
-                                className="absolute right-16 top-0 w-32 bg-white dark:bg-emerald-900 rounded-xl shadow-xl border border-emerald-500/10 z-20 py-1 overflow-hidden"
+                                className="absolute right-16 top-0 w-36 bg-white dark:bg-emerald-900 rounded-xl shadow-xl border border-emerald-500/10 z-20 py-1 overflow-hidden"
                               >
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setSelectedMessage(msg); setOpenActionId(null); }}
-                                  className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-2"
                                 >
-                                  Detail
+                                  <span className="material-symbols-outlined text-sm">visibility</span>
+                                  Lihat Detail
                                 </button>
                                 {canDelete && (
                                   <button 
