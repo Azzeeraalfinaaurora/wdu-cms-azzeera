@@ -201,7 +201,7 @@ export default function MessagesPage() {
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span className={`text-xs font-extrabold ${!msg.isRead ? 'text-on-surface' : 'text-slate-400'}`}>
-                        {new Date(msg.createdAt).toLocaleDateString('id-ID')}
+                        {new Date(msg.createdAt).toLocaleDateString('en-GB')} {String(new Date(msg.createdAt).getHours()).padStart(2,'0')}:{String(new Date(msg.createdAt).getMinutes()).padStart(2,'0')}
                       </span>
                     </td>
                     <td className="px-6 py-5 text-center">
@@ -300,7 +300,7 @@ export default function MessagesPage() {
                       {selectedMessage.name || 'Anonim'}
                     </span>
                     <span className="text-[10px] font-bold text-slate-400">
-                      {new Date(selectedMessage.createdAt).toLocaleString('id-ID')}
+                      {new Date(selectedMessage.createdAt).toLocaleDateString('en-GB')} {String(new Date(selectedMessage.createdAt).getHours()).padStart(2,'0')}:{String(new Date(selectedMessage.createdAt).getMinutes()).padStart(2,'0')}
                     </span>
                   </div>
                 </div>

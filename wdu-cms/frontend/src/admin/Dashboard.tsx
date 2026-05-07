@@ -246,7 +246,7 @@ export default function Dashboard() {
                     </td>
                     <td className="px-8 py-5">
                        <p className="text-sm text-on-surface-variant font-bold truncate max-w-[200px]">{msg.subject}</p>
-                       <p className="text-[10px] text-outline font-medium">{new Date(msg.createdAt).toLocaleDateString('id-ID')}</p>
+                        <p className="text-[10px] text-outline font-medium">{new Date(msg.createdAt).toLocaleDateString('en-GB')} {String(new Date(msg.createdAt).getHours()).padStart(2,'0')}:{String(new Date(msg.createdAt).getMinutes()).padStart(2,'0')}</p>
                     </td>
                     <td className="px-8 py-5 text-right relative">
                       <button 
