@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../utils/api';
+import { useAuthStore } from '../store/authStore';
 
 interface Message {
   id: string;
@@ -103,6 +104,10 @@ export default function MessagesPage() {
     link.href = mailtoUrl;
     link.click();
   };
+  const { user } = useAuthStore();
+  
+  const canDelete = user?.role === 'SUPER_ADMIN';
+
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto pb-12">
       {/* Page Header */}
@@ -116,13 +121,15 @@ export default function MessagesPage() {
             <span className="material-symbols-outlined text-xl">file_download</span>
             Ekspor CSV
           </button>
-          <button 
-            onClick={handleMarkAllAsRead}
-            className="px-6 py-2.5 gradient-btn text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-xl">mark_email_read</span>
-            Tandai Semua Dibaca
-          </button>
+          {canDelete && (
+            <button 
+              onClick={handleMarkAllAsRead}
+              className="px-6 py-2.5 gradient-btn text-white font-bold rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-xl">mark_email_read</span>
+              Tandai Semua Dibaca
+            </button>
+          )}
         </div>
       </div>
 
@@ -211,17 +218,19 @@ export default function MessagesPage() {
                         {!msg.isRead ? 'Baru' : 'Dibaca'}
                       </span>
                     </td>
-                    <td className="px-8 py-5 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }}
-                          className="p-2 hover:bg-error-container/50 rounded-lg text-error transition-all opacity-0 group-hover:opacity-100"
-                          title="Hapus"
-                        >
-                          <span className="material-symbols-outlined text-xl font-bold">delete</span>
-                        </button>
-                      </div>
-                    </td>
+                    {canDelete && (
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }}
+                            className="p-2 hover:bg-error-container/50 rounded-lg text-error transition-all opacity-0 group-hover:opacity-100"
+                            title="Hapus"
+                          >
+                            <span className="material-symbols-outlined text-xl font-bold">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import { useAuthStore } from '../store/authStore';
 import { 
   AreaChart, 
   Area, 
@@ -28,6 +29,9 @@ const monthlyData = [
 ];
 
 export default function Dashboard() {
+  const { user } = useAuthStore();
+  const canDelete = user?.role === 'SUPER_ADMIN';
+  
   const [stats, setStats] = useState([
     { name: 'Total Layanan', value: '0', icon: 'design_services', color: 'border-primary' },
     { name: 'Project Selesai', value: '0', icon: 'verified', color: 'border-primary-container' },
@@ -260,25 +264,27 @@ export default function Dashboard() {
                         {openActionId === msg.id && (
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setOpenActionId(null)}></div>
-                            <motion.div 
-                              initial={{ opacity: 0, x: -10, scale: 0.95 }}
-                              animate={{ opacity: 1, x: 0, scale: 1 }}
-                              exit={{ opacity: 0, x: -10, scale: 0.95 }}
-                              className="absolute right-16 top-0 w-32 bg-white dark:bg-emerald-900 rounded-xl shadow-xl border border-emerald-500/10 z-20 py-1 overflow-hidden"
-                            >
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setSelectedMessage(msg); setOpenActionId(null); }}
-                                className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors"
+                              <motion.div 
+                                initial={{ opacity: 0, x: -10, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: -10, scale: 0.95 }}
+                                className="absolute right-16 top-0 w-32 bg-white dark:bg-emerald-900 rounded-xl shadow-xl border border-emerald-500/10 z-20 py-1 overflow-hidden"
                               >
-                                Detail
-                              </button>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }}
-                                className="w-full text-left px-4 py-2 text-xs font-bold text-error hover:bg-error/5 transition-colors"
-                              >
-                                Hapus
-                              </button>
-                            </motion.div>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setSelectedMessage(msg); setOpenActionId(null); }}
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors"
+                                >
+                                  Detail
+                                </button>
+                                {canDelete && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }}
+                                    className="w-full text-left px-4 py-2 text-xs font-bold text-error hover:bg-error/5 transition-colors"
+                                  >
+                                    Hapus
+                                  </button>
+                                )}
+                              </motion.div>
                           </>
                         )}
                       </AnimatePresence>
