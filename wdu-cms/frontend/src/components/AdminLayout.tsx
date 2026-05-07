@@ -296,12 +296,15 @@ export default function AdminLayout() {
                   )}
                 </AnimatePresence>
               </div>
-              <button
-                onClick={() => navigate('/admin/config')}
-                className="text-slate-500 hover:text-primary transition-colors"
-              >
-                <span className="material-symbols-outlined">settings</span>
-              </button>
+              {user?.role === 'SUPER_ADMIN' && (
+                <button
+                  onClick={() => navigate('/admin/config')}
+                  className="text-slate-500 hover:text-primary transition-colors"
+                  title="Pengaturan Situs"
+                >
+                  <span className="material-symbols-outlined">settings</span>
+                </button>
+              )}
               <button
                 onClick={toggleTheme}
                 className="text-slate-500 hover:text-primary transition-colors p-2 rounded-full hover:bg-surface-container-low dark:hover:bg-emerald-900/30"
