@@ -115,8 +115,14 @@ export default function Dashboard() {
     const body = encodeURIComponent(`Halo ${name},\n\nTerima kasih telah menghubungi kami.\n\n`);
     const mailtoUrl = `mailto:${email}?subject=${mailSubject}&body=${body}`;
     
-    // Open default email client
-    window.location.href = mailtoUrl;
+    // Create hidden link and click it (most robust method for mailto)
+    const link = document.createElement('a');
+    link.href = mailtoUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleDelete = async (id: string) => {
