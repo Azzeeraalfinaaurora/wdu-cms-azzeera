@@ -27,11 +27,7 @@ export default function AdminLayout() {
   const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('admin-theme') as 'light' | 'dark' || 'light');
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const dummyNotifications = [
-    { id: 1, text: 'Pesan baru dari Budi Santoso', time: '5 menit yang lalu', isRead: false },
-    { id: 2, text: 'Pembaruan sistem berhasil', time: '1 jam yang lalu', isRead: true },
-    { id: 3, text: 'Gagal memuat gambar pada halaman layanan', time: '2 jam yang lalu', isRead: true }
-  ];
+  const [notifications, setNotifications] = useState<any[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -46,19 +42,33 @@ export default function AdminLayout() {
 
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
-  // Fetch dynamic message badge count
+  // Fetch notifications from contact messages
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/contact/messages');
+      const messages = res.data;
+      const unreadMsgs = messages.filter((m: any) => !m.isRead);
+      setUnreadCount(unreadMsgs.length);
+      
+      // Map to notifications (show last 5 unread messages)
+      const notifs = unreadMsgs.slice(0, 5).map((msg: any) => ({
+        id: msg.id,
+        text: `Pesan baru dari ${msg.name}`,
+        time: new Date(msg.createdAt).toLocaleDateString('en-GB') + ' ' + 
+              String(new Date(msg.createdAt).getHours()).padStart(2,'0') + ':' + 
+              String(new Date(msg.createdAt).getMinutes()).padStart(2,'0'),
+        isRead: false,
+        email: msg.email
+      }));
+      setNotifications(notifs);
+    } catch (e) {
+      console.error('Failed to fetch notifications', e);
+    }
+  };
+
   useEffect(() => {
-    const fetchUnread = async () => {
-      try {
-        const res = await api.get('/contact/messages');
-        const count = res.data.filter((m: any) => !m.isRead).length;
-        setUnreadCount(count);
-      } catch (e) {
-        console.error('Failed to fetch unread count');
-      }
-    };
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 30000); // 30s polling
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // 30s polling
     return () => clearInterval(interval);
   }, []);
 
@@ -263,7 +273,9 @@ export default function AdminLayout() {
                   className="text-slate-500 hover:text-primary transition-colors relative flex items-center justify-center p-2 rounded-full hover:bg-surface-container-low"
                 >
                   <span className="material-symbols-outlined">notifications</span>
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full animate-pulse"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full animate-pulse"></span>
+                  )}
                 </button>
 
                 <AnimatePresence>
@@ -278,18 +290,65 @@ export default function AdminLayout() {
                       >
                         <div className="p-4 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low/50">
                           <h3 className="text-sm font-extrabold text-emerald-950 dark:text-white">Notifikasi</h3>
-                          <button className="text-[10px] text-primary font-bold hover:underline">Tandai Semua Dibaca</button>
+                          {notifications.length > 0 && (
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  await api.patch('/contact/messages/read-all');
+                                  fetchNotifications();
+                                  setUnreadCount(0);
+                                } catch (e) {
+                                  console.error('Failed to mark all as read', e);
+                                }
+                              }}
+                              className="text-[10px] text-primary font-bold hover:underline"
+                            >
+                              Tandai Semua Dibaca
+                            </button>
+                          )}
                         </div>
                         <div className="max-h-80 overflow-y-auto">
-                          {dummyNotifications.map(notif => (
-                            <div key={notif.id} className={`p-4 border-b border-outline-variant/5 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer ${!notif.isRead ? 'bg-primary-container/10' : ''}`}>
-                              <p className={`text-sm ${!notif.isRead ? 'font-bold text-on-surface' : 'font-medium text-outline'}`}>{notif.text}</p>
-                              <p className="text-[10px] text-slate-400 mt-1">{notif.time}</p>
+                          {notifications.length === 0 ? (
+                            <div className="p-8 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                              Tidak ada notifikasi
                             </div>
-                          ))}
+                          ) : (
+                            notifications.map((notif: any) => (
+                              <div 
+                                key={notif.id} 
+                                onClick={async () => {
+                                  try {
+                                    await api.patch(`/contact/messages/${notif.id}/read`, { isRead: true });
+                                    fetchNotifications();
+                                  } catch (e) {
+                                    console.error('Failed to mark as read', e);
+                                  }
+                                }}
+                                className="p-4 border-b border-outline-variant/5 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer"
+                              >
+                                <p className="text-sm font-bold text-on-surface">{notif.text}</p>
+                                <p className="text-[10px] text-slate-400 mt-1">{notif.time}</p>
+                              </div>
+                            ))
+                          )}
                         </div>
-                        <div className="p-2 border-t border-outline-variant/10 bg-surface-container-low/50">
-                          <button onClick={() => setIsNotifOpen(false)} className="w-full py-2 text-xs font-bold text-primary hover:underline">Tutup</button>
+                        <div className="p-2 border-t border-outline-variant/10 bg-surface-container-low/50 flex gap-2">
+                          <Link
+                            to="/admin/contact"
+                            onClick={() => setIsNotifOpen(false)}
+                            className="flex-1 py-2 text-xs font-bold text-primary hover:underline text-center"
+                          >
+                            Lihat Semua
+                          </Link>
+                          <button 
+                            onClick={(e) => { 
+                              e.stopPropagation();
+                              setIsNotifOpen(false); 
+                            }} 
+                            className="flex-1 py-2 text-xs font-bold text-outline hover:underline"
+                          >
+                            Tutup
+                          </button>
                         </div>
                       </motion.div>
                     </>
