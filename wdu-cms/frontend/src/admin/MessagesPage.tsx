@@ -117,10 +117,6 @@ export default function MessagesPage() {
           <p className="text-on-surface-variant font-medium">Kelola semua komunikasi masuk dari sistem manajemen konten Anda.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-6 py-2.5 bg-white border border-secondary-container text-secondary font-bold rounded-xl hover:bg-secondary-container/20 transition-all flex items-center gap-2">
-            <span className="material-symbols-outlined text-xl">file_download</span>
-            Ekspor CSV
-          </button>
           {canDelete && (
             <button 
               onClick={handleMarkAllAsRead}
