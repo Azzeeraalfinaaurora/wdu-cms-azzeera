@@ -290,20 +290,6 @@ export default function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-2 lg:gap-3">
-            <div className="relative hidden md:block">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <MaterialIcon name="search" className="text-lg" />
-              </span>
-              <input
-                className="bg-gray-100 dark:bg-gray-800 border-none rounded-xl pl-9 pr-4 h-9 text-sm focus:ring-2 focus:ring-emerald-500/20 focus:bg-white dark:focus:bg-gray-800 w-56 transition-all outline-none"
-                placeholder="Cari data..."
-                type="text"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') setShowNotification('Pencarian sedang disiapkan...');
-                }}
-              />
-            </div>
-
             <div className="relative">
               <button
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
