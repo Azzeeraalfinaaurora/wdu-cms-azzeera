@@ -15,6 +15,7 @@ export default function MediaPage() {
   const [media, setMedia] = useState<MediaFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'IMAGE' | 'DOC'>('ALL');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -35,15 +36,37 @@ export default function MediaPage() {
   useEffect(() => { fetchMedia(); }, []);
 
   useEffect(() => {
+    let dragCounter = 0;
+    const onDragEnter = () => { dragCounter++; if (dragCounter === 1) setIsDragOver(true); };
+    const onDragLeave = () => { dragCounter--; if (dragCounter === 0) setIsDragOver(false); };
+    const onDragOver = (e: DragEvent) => { e.preventDefault(); };
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsDragOver(false);
+      const file = e.dataTransfer?.files?.[0];
+      if (file) uploadFile(file);
+    };
+    document.addEventListener('dragenter', onDragEnter);
+    document.addEventListener('dragleave', onDragLeave);
+    document.addEventListener('dragover', onDragOver);
+    document.addEventListener('drop', onDrop);
+    return () => {
+      document.removeEventListener('dragenter', onDragEnter);
+      document.removeEventListener('dragleave', onDragLeave);
+      document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('drop', onDrop);
+    };
+  }, []);
+
+  useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(null), 3000);
       return () => clearTimeout(t);
     }
   }, [toast]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
     setIsUploading(true);
@@ -57,8 +80,14 @@ export default function MediaPage() {
       setToast('Gagal mengunggah file');
     } finally {
       setIsUploading(false);
-      if (event.target) event.target.value = '';
     }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
+    if (event.target) event.target.value = '';
   };
 
   const handleDelete = async (id: string) => {
@@ -131,7 +160,17 @@ export default function MediaPage() {
   ];
 
   return (
-    <div className="p-4 md:p-8 space-y-6 max-w-[1600px] mx-auto pb-20">
+    <div className="p-4 md:p-8 space-y-6 max-w-[1600px] mx-auto pb-20 relative">
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-emerald-600/10 dark:bg-emerald-500/10 backdrop-blur-sm rounded-[2rem] border-2 border-dashed border-emerald-500">
+          <div className="text-center -mt-20">
+            <span className="material-symbols-outlined text-6xl text-emerald-500">cloud_upload</span>
+            <p className="text-base font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mt-3">Lepaskan file di sini</p>
+            <p className="text-xs text-emerald-500/70 mt-1">{isUploading ? 'Mengunggah...' : 'File akan langsung diupload'}</p>
+          </div>
+        </div>
+      )}
+
       {/* Minimalist Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md p-6 rounded-[2rem] border border-gray-100 dark:border-zinc-800 shadow-sm sticky top-4 z-30">
         <div>
