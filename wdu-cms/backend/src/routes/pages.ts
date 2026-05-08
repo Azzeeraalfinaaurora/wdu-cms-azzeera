@@ -13,6 +13,9 @@ router.get('/', async (req, res) => {
 router.get('/:slug', async (req, res) => {
   const page = await prisma.page.findUnique({ where: { slug: req.params.slug } });
   if (!page) return res.status(404).json({ error: 'Page not found' });
+  if (!page.isPublished && !req.query.preview) {
+    return res.status(404).json({ error: 'Page not found' });
+  }
   res.json(page);
 });
 

@@ -170,9 +170,10 @@ export default function HalamanPage() {
     setEditingPage(page);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (publish?: boolean) => {
     if (!editingPage) return;
     setIsSaving(true);
+    const isPublished = publish !== undefined ? publish : formData._isPublished;
     try {
       const meta = PAGE_META[editingPage.slug];
       const sections: Record<string, string> = {};
@@ -183,10 +184,10 @@ export default function HalamanPage() {
         metaTitle: formData._metaTitle,
         metaDesc: formData._metaDesc,
         sections,
-        isPublished: formData._isPublished,
+        isPublished,
       });
       
-      setToast('Halaman berhasil disimpan!');
+      setToast(isPublished ? 'Halaman berhasil diterbitkan!' : 'Draft berhasil disimpan!');
       setEditingPage(null);
       navigate('/admin/pages');
       fetchPages();
@@ -284,9 +285,9 @@ export default function HalamanPage() {
                             Terbit
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800 rounded-full">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500"></span>
-                            Disembunyikan
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-full">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Draft
                           </span>
                         )}
                       </td>
@@ -369,20 +370,16 @@ export default function HalamanPage() {
                   </div>
                   
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-3 h-3 rounded-full animate-pulse ${formData._isPublished ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-                        <div>
-                          <p className="text-xs font-black text-emerald-900 dark:text-emerald-50 uppercase tracking-widest">Status Penerbitan</p>
-                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase mt-0.5">{formData._isPublished ? 'Halaman ini Terbit Publik' : 'Halaman Masih Draft'}</p>
-                        </div>
+                    <div className="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData._isPublished ? 'bg-emerald-500 text-white' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
+                        <span className="material-symbols-outlined text-lg">{formData._isPublished ? 'public' : 'edit_note'}</span>
                       </div>
-                      <button 
-                        onClick={() => setFormData(p => ({ ...p, _isPublished: !p._isPublished }))}
-                        className={`w-14 h-7 rounded-full relative transition-all duration-500 shadow-inner ${formData._isPublished ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-zinc-700'}`}
-                      >
-                        <div className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all duration-500 shadow-md ${formData._isPublished ? 'left-8' : 'left-1'}`} />
-                      </button>
+                      <div>
+                        <p className="text-xs font-black text-emerald-900 dark:text-emerald-50 uppercase tracking-widest">Status</p>
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase mt-0.5">
+                          {formData._isPublished ? 'Halaman sudah terbit' : 'Halaman masih draft'}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -493,7 +490,7 @@ export default function HalamanPage() {
                   <button
                     onClick={() => {
                       const url = editingPage.slug === 'home' ? '/' : `/${editingPage.slug}`;
-                      window.open(url, '_blank');
+                      window.open(url + '?preview=true', '_blank');
                     }}
                     className="flex-1 py-4 px-6 border-2 border-emerald-600 text-emerald-600 dark:text-primary dark:border-primary bg-white dark:bg-transparent rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all flex items-center justify-center gap-2 active:scale-95"
                   >
@@ -501,19 +498,33 @@ export default function HalamanPage() {
                     Preview
                   </button>
                   <button
-                    onClick={handleSave}
+                    onClick={() => handleSave(false)}
                     disabled={isSaving}
-                    className="flex-[2] py-4 px-8 bg-primary text-zinc-950 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-green-700 dark:hover:bg-emerald-400 transition-all disabled:opacity-50 flex justify-center items-center gap-3 active:scale-95"
+                    className="flex-1 py-4 px-6 border-2 border-amber-500 text-amber-600 dark:text-amber-400 bg-white dark:bg-transparent rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+                  >
+                    {isSaving ? (
+                      <span className="w-4 h-4 border-2 border-amber-500/40 border-t-amber-500 rounded-full animate-spin"></span>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-lg">edit_note</span>
+                        Simpan Draft
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleSave(true)}
+                    disabled={isSaving}
+                    className="flex-[2] py-4 px-8 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:bg-emerald-700 transition-all disabled:opacity-50 flex justify-center items-center gap-3 active:scale-95"
                   >
                     {isSaving ? (
                       <>
-                        <span className="w-4 h-4 border-2 border-zinc-950/40 border-t-zinc-950 rounded-full animate-spin"></span>
+                        <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>
                         Menyimpan...
                       </>
                     ) : (
                       <>
                         <span className="material-symbols-outlined text-lg">cloud_upload</span>
-                        Simpan Perubahan
+                        Terbitkan
                       </>
                     )}
                   </button>
