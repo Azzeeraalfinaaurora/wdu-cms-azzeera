@@ -300,7 +300,7 @@ const HomePage = () => {
                     {service.title}
                   </h3>
                   <div className="w-12 h-[3px] bg-emerald-500 rounded-full mb-8 opacity-40"></div>
-                  <p className="text-slate-600 leading-[1.8] text-[17px] font-medium px-4 line-clamp-4">
+                  <p className="text-slate-600 leading-[1.8] text-[17px] font-medium px-4">
                     {('description' in service) ? service.description : (service as any).desc}
                   </p>
                 </div>
