@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import api from '../utils/api';
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
@@ -13,6 +14,8 @@ export default function ProfilePage() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState('https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80');
+  const fileInputRef = useRef<any>(null);
 
   useEffect(() => {
     if (toast) {
@@ -49,13 +52,73 @@ export default function ProfilePage() {
           <div className="bg-white dark:bg-emerald-950/20 rounded-2xl p-6 border border-outline-variant/10 flex flex-col items-center text-center emerald-glow">
             <div className="relative mb-4">
               <img 
-                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80" 
+                src={profileImage} 
                 alt="Profile" 
                 className="w-32 h-32 rounded-full object-cover border-4 border-emerald-50 dark:border-emerald-900/30 shadow-lg"
               />
-              <button className="absolute bottom-0 right-0 w-10 h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white dark:border-emerald-950">
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-0 right-0 w-10 h-10 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full flex items-center justify-center shadow-lg transition-colors border-2 border-white dark:border-emerald-950"
+                title="Ganti Foto Profil"
+              >
                 <span className="material-symbols-outlined text-lg">photo_camera</span>
               </button>
+              <input 
+                ref={fileInputRef}
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  // Validate file
+                  if (!file.type.startsWith('image/')) {
+                    setToast('Hanya file gambar yang diperbolehkan');
+                    return;
+                  }
+                  
+                  if (file.size > 5 * 1024 * 1024) {
+                    setToast('Ukuran file maksimal 5MB');
+                    return;
+                  }
+                  
+                  // Upload to media library first
+                  const formData = new FormData();
+                  formData.append('file', file);
+                  
+                  try {
+                    setIsSaving(true);
+                    // Get token from auth storage
+                    const authStorage = localStorage.getItem('auth-storage');
+                    let token = '';
+                    if (authStorage) {
+                      const { state } = JSON.parse(authStorage);
+                      token = state.accessToken;
+                    }
+                    
+                    const res = await fetch('/api/v1/media/upload', {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: formData
+                    });
+                    
+                    if (!res.ok) throw new Error('Upload failed');
+                    
+                    const data = await res.json();
+                    const imageUrl = data.url;
+                    setProfileImage(imageUrl);
+                    setToast('Foto profil berhasil diperbarui!');
+                  } catch (err) {
+                    setToast('Gagal mengunggah foto profil');
+                    console.error('Failed to upload profile image:', err);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+              />
             </div>
             <h2 className="text-lg font-extrabold text-on-surface">{formData.name}</h2>
             <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1">{user?.role || 'SUPER_ADMIN'}</p>

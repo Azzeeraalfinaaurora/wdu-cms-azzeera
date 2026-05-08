@@ -1,389 +1,201 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useAuthStore } from '../store/authStore';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer
-} from 'recharts';
 
-const monthlyData = [
-  { name: 'JAN', messages: 45 },
-  { name: 'FEB', messages: 52 },
-  { name: 'MAR', messages: 38 },
-  { name: 'APR', messages: 65 },
-  { name: 'MEI', messages: 48 },
-  { name: 'JUN', messages: 70 },
-  { name: 'JUL', messages: 85 },
-  { name: 'AGU', messages: 62 },
-  { name: 'SEP', messages: 90 },
-  { name: 'OKT', messages: 75 },
-  { name: 'NOV', messages: 88 },
-  { name: 'DES', messages: 110 },
-];
+const icons = {
+  design_services: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>,
+  verified: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
+  mail: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>,
+  admin_panel_settings: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+  home: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  description: <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>,
+};
 
 export default function Dashboard() {
   const { user } = useAuthStore();
-  const canDelete = user?.role === 'SUPER_ADMIN';
-  
+
   const [stats, setStats] = useState([
-    { name: 'Total Layanan', value: '0', icon: 'design_services', color: 'border-primary' },
-    { name: 'Project Selesai', value: '0', icon: 'verified', color: 'border-primary-container' },
-    { name: 'Pesan Baru', value: '0', icon: 'mail', color: 'border-tertiary' },
-    { name: 'Admin Aktif', value: '0', icon: 'admin_panel_settings', color: 'border-outline' },
+    { name: 'Total Layanan', value: '0', icon: 'design_services' },
+    { name: 'Project Selesai', value: '0', icon: 'verified' },
+    { name: 'Pesan Baru', value: '0', icon: 'mail' },
+    { name: 'Admin Aktif', value: '0', icon: 'admin_panel_settings' },
   ]);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
-  const [openActionId, setOpenActionId] = useState<string | null>(null);
-  const [selectedMessage, setSelectedMessage] = useState<any | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
 
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
   const fetchDashboardData = async () => {
-    // 1. Fetch Services
     try {
-      const res = await api.get('/services');
-      setStats(prev => prev.map(s => s.name === 'Total Layanan' ? { ...s, value: res.data.length.toString() } : s));
-    } catch (e) { console.error('Dashboard: Failed to fetch services'); }
+      const [services, projects, messages, users] = await Promise.allSettled([
+        api.get('/services'),
+        api.get('/projects'),
+        api.get('/contact/messages'),
+        api.get('/users'),
+      ]);
 
-    // 2. Fetch Projects
-    try {
-      const res = await api.get('/projects');
-      setStats(prev => prev.map(s => s.name === 'Project Selesai' ? { ...s, value: res.data.length.toString() } : s));
-    } catch (e) { console.error('Dashboard: Failed to fetch projects'); }
-
-    // 3. Fetch Messages
-    try {
-      const res = await api.get('/contact/messages');
-      const unreadCount = res.data.filter((m: any) => !m.isRead).length;
-      setStats(prev => prev.map(s => s.name === 'Pesan Baru' ? { ...s, value: unreadCount.toString() } : s));
-      setRecentMessages(res.data.slice(0, 3));
-    } catch (e: any) { 
-      console.error('Dashboard: Failed to fetch messages', e);
-      const errorMsg = e.response?.data?.error || e.message || 'Error';
-      setToast(`Pesan: ${errorMsg}`);
-    }
-
-    // 4. Fetch Users (Only if role is SUPER_ADMIN)
-    try {
-      const res = await api.get('/users');
-      setStats(prev => prev.map(s => s.name === 'Admin Aktif' ? { ...s, value: res.data.length.toString() } : s));
-    } catch (e) {
-      // Default to 1 if failed (fallback for Editor)
-      setStats(prev => prev.map(s => s.name === 'Admin Aktif' ? { ...s, value: '1' } : s));
-    }
-  };
-
-  const handleReplyWA = (phone: string | null, name: string) => {
-    if (!phone) {
-      setToast('Nomor telepon tidak tersedia.');
-      return;
-    }
-    const cleanPhone = phone.replace(/\D/g, '');
-    let finalPhone = cleanPhone;
-    if (finalPhone.startsWith('0')) {
-      finalPhone = '62' + finalPhone.substring(1);
-    } else if (!finalPhone.startsWith('62') && finalPhone.length > 0) {
-      finalPhone = '62' + finalPhone;
-    }
-    const text = encodeURIComponent(`Halo ${name}, terima kasih telah menghubungi Wahana Data Utama...`);
-    window.open(`https://wa.me/${finalPhone}?text=${text}`, '_blank');
-  };
-
-  const handleReplyEmail = (email: string, subject: string, name: string) => {
-    if (!email) {
-      setToast('Email pengirim tidak tersedia');
-      return;
-    }
-    const mailSubject = encodeURIComponent(`Re: ${subject} - Wahana Data Utama`);
-    const body = encodeURIComponent(`Halo ${name},\n\nTerima kasih telah menghubungi kami.\n\n`);
-    const mailtoUrl = `mailto:${email}?subject=${mailSubject}&body=${body}`;
-    
-    // Create hidden link and click it (most robust method for mailto)
-    const link = document.createElement('a');
-    link.href = mailtoUrl;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Hapus pesan ini secara permanen?')) {
-      try {
-        await api.delete(`/contact/messages/${id}`);
-        setToast('Pesan berhasil dihapus');
-        fetchDashboardData();
-        setOpenActionId(null);
-      } catch (err) {
-        setToast('Gagal menghapus pesan');
+      if (services.status === 'fulfilled') {
+        setStats(prev => prev.map(s => s.name === 'Total Layanan' ? { ...s, value: services.value.data.length.toString() } : s));
       }
+      if (projects.status === 'fulfilled') {
+        setStats(prev => prev.map(s => s.name === 'Project Selesai' ? { ...s, value: projects.value.data.length.toString() } : s));
+      }
+      if (messages.status === 'fulfilled') {
+        const data = messages.value.data;
+        const unreadCount = data.filter((m: any) => !m.isRead).length;
+        setStats(prev => prev.map(s => s.name === 'Pesan Baru' ? { ...s, value: unreadCount.toString() } : s));
+        setRecentMessages(data.slice(0, 5));
+      }
+      if (users.status === 'fulfilled') {
+        setStats(prev => prev.map(s => s.name === 'Admin Aktif' ? { ...s, value: users.value.data.length.toString() } : s));
+      } else {
+        setStats(prev => prev.map(s => s.name === 'Admin Aktif' ? { ...s, value: '1' } : s));
+      }
+    } catch (e) {
+      console.error('Dashboard fetch error', e);
     }
   };
+
+  const statGradients: Record<string, string> = {
+    design_services: 'from-emerald-500 to-emerald-600',
+    verified: 'from-blue-500 to-cyan-500',
+    mail: 'from-amber-500 to-orange-500',
+    admin_panel_settings: 'from-violet-500 to-purple-500',
+  };
+
+  const quickActions = [
+    { label: 'Edit Beranda', icon: 'home', path: '/admin/pages', desc: 'Kelola halaman utama website', gradient: 'from-emerald-500 to-teal-500' },
+    { label: 'Upload Company Profile', icon: 'description', path: '/admin/config', desc: 'Perbarui profil perusahaan', gradient: 'from-blue-500 to-indigo-500' },
+    { label: 'Lihat Pesan', icon: 'mail', path: '/admin/contact', desc: 'Cek pesan masuk dari klien', gradient: 'from-amber-500 to-orange-500' },
+  ];
+
   return (
-    <div className="p-8 space-y-8 pb-12">
-      {/* Stat Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="p-6 lg:p-8 space-y-7 pb-12 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">
+            Selamat Datang, {user?.name?.split(' ')[0] || 'Admin'}
+          </h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
+            Kelola semua aset digital PT. Wahana Data Utama
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.name}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className={`bg-surface-container-lowest p-6 rounded-xl emerald-glow border-l-4 ${stat.color} hover:scale-105 transition-transform duration-300`}
+            transition={{ delay: i * 0.06 }}
+            className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 overflow-hidden"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-2 rounded-lg ${stat.icon === 'mail' ? 'bg-tertiary-container/20' : 'bg-secondary-container'}`}>
-                <span className={`material-symbols-outlined ${stat.icon === 'mail' ? 'text-tertiary' : 'text-primary'}`}>
-                  {stat.icon}
-                </span>
-              </div>
+            <div className="absolute top-0 right-0 w-24 h-24 opacity-[0.04] dark:opacity-[0.06]">
+              <div className={`w-full h-full rounded-full bg-gradient-to-br ${statGradients[stat.icon]} blur-3xl`} />
             </div>
-            <p className="text-outline text-[10px] uppercase tracking-widest font-extrabold">{stat.name}</p>
-            <h3 className="text-3xl font-extrabold text-on-surface mt-1">{stat.value}</h3>
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-850 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 mb-3">
+                {icons[stat.icon as keyof typeof icons]}
+              </div>
+              <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">{stat.name}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-0.5 tabular-nums">{stat.value}</p>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Content Row: Quick Actions & Recent Messages */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Quick Actions & Server Status */}
-        <div className="lg:col-span-4 space-y-6">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-surface-container-lowest p-8 rounded-xl emerald-glow border border-outline-variant/10"
-          >
-            <h4 className="text-lg font-extrabold text-on-surface mb-6">Aksi Cepat</h4>
-            <div className="space-y-4">
-              <button 
-                onClick={() => navigate('/admin/pages')}
-                className="w-full flex items-center justify-between gradient-btn text-white p-4 rounded-xl hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg shadow-primary/20"
-              >
-                <span className="font-extrabold text-sm uppercase tracking-tight">Kelola Halaman</span>
-                <span className="material-symbols-outlined">description</span>
-              </button>
-              <button 
-                onClick={() => navigate('/admin/config')}
-                className="w-full flex items-center justify-between bg-surface-container-low border border-outline-variant/30 text-on-surface p-4 rounded-xl hover:bg-surface-container-high transition-colors active:scale-95"
-              >
-                <span className="font-extrabold text-sm uppercase tracking-tight">Upload Company Profile</span>
-                <span className="material-symbols-outlined">upload_file</span>
-              </button>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-primary p-6 rounded-xl text-white relative overflow-hidden group shadow-xl shadow-primary/10"
-          >
-            <div className="relative z-10">
-              <p className="text-[10px] uppercase tracking-widest text-primary-fixed opacity-80 mb-1 font-extrabold">Status Server</p>
-              <h5 className="text-xl font-extrabold mb-4">Semua Sistem Optimal</h5>
-              <div className="flex items-center gap-2 text-sm font-bold">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-primary-fixed animate-pulse"></span>
-                99.9% Uptime Terjaga
-              </div>
-            </div>
-            <span className="material-symbols-outlined absolute -bottom-6 -right-6 text-[120px] opacity-10 group-hover:scale-110 transition-transform duration-700">cloud_done</span>
-          </motion.div>
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-1 h-4 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600" />
+          <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Quick Actions</h2>
         </div>
-
-        {/* Right Column: Recent Messages Table */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="lg:col-span-8 bg-surface-container-lowest rounded-xl emerald-glow overflow-hidden border border-outline-variant/10"
-        >
-          <div className="p-8 flex justify-between items-center bg-surface-container-low dark:bg-emerald-900/10">
-            <div>
-              <h4 className="text-xl font-extrabold text-on-surface">Pesan Masuk Terbaru</h4>
-              <p className="text-sm text-outline font-medium">Daftar permintaan klien terbaru</p>
-            </div>
-            <button 
-              onClick={() => navigate('/admin/contact')}
-              className="text-primary text-sm font-extrabold flex items-center gap-1 hover:underline group"
-            >
-              Lihat Semua
-              <span className="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_forward</span>
-            </button>
-          </div>
-          
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-surface-container-low dark:bg-emerald-900/20 text-outline text-[10px] uppercase tracking-widest font-extrabold">
-                        <th className="px-8 py-4">Pengirim</th>
-                        <th className="px-8 py-4">Waktu</th>
-                        <th className="px-8 py-4 text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-container-high dark:divide-emerald-900/30">
-                {recentMessages.length > 0 ? recentMessages.map((msg) => (
-                  <tr 
-                    key={msg.id} 
-                    onClick={() => setSelectedMessage(msg)}
-                    className="hover:bg-surface-container-low/50 dark:hover:bg-emerald-900/10 transition-colors group cursor-pointer"
-                  >
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-extrabold text-[10px] ${
-                          !msg.isRead ? 'bg-primary text-white' : 'bg-surface-container-high text-outline'
-                        }`}>
-                          {msg.name?.charAt(0) || '?'}
-                        </div>
-                        <div>
-                          <p className="text-sm font-extrabold text-on-surface">{msg.name || 'Tanpa Nama'}</p>
-                          <p className="text-[10px] text-outline font-bold truncate max-w-[120px]">{msg.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                       <p className="text-sm text-on-surface-variant font-bold">{new Date(msg.createdAt).toLocaleDateString('en-GB')} {String(new Date(msg.createdAt).getHours()).padStart(2,'0')}:{String(new Date(msg.createdAt).getMinutes()).padStart(2,'0')}</p>
-                    </td>
-                    <td className="px-8 py-5 text-right relative">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setOpenActionId(openActionId === msg.id ? null : msg.id); }}
-                        className={`text-outline hover:text-primary transition-colors p-2 rounded-lg shadow-sm group-hover:shadow-md transition-all ${openActionId === msg.id ? 'bg-primary-fixed/20 text-primary' : 'hover:bg-white dark:hover:bg-emerald-800'}`}
-                      >
-                        <span className="material-symbols-outlined">more_vert</span>
-                      </button>
-
-                      <AnimatePresence>
-                        {openActionId === msg.id && (
-                          <>
-                            <div className="fixed inset-0 z-10" onClick={() => setOpenActionId(null)}></div>
-                              <motion.div 
-                                initial={{ opacity: 0, x: -10, scale: 0.95 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, x: -10, scale: 0.95 }}
-                                className="absolute right-16 top-0 w-36 bg-white dark:bg-emerald-900 rounded-xl shadow-xl border border-emerald-500/10 z-20 py-1 overflow-hidden"
-                              >
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); setSelectedMessage(msg); setOpenActionId(null); }}
-                                  className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-2"
-                                >
-                                  <span className="material-symbols-outlined text-sm">visibility</span>
-                                  Lihat Detail
-                                </button>
-                                {canDelete && (
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }}
-                                    className="w-full text-left px-4 py-2 text-xs font-bold text-error hover:bg-error/5 transition-colors"
-                                  >
-                                    Hapus
-                                  </button>
-                                )}
-                              </motion.div>
-                          </>
-                        )}
-                      </AnimatePresence>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={3} className="px-8 py-10 text-center text-outline text-sm italic font-medium">Belum ada pesan masuk terbaru</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Message Detail Modal (Consistent with MessagesPage) */}
-      <AnimatePresence>
-        {selectedMessage && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedMessage(null)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4">
+          {quickActions.map((action, i) => (
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="bg-surface-container-lowest dark:bg-emerald-950 w-full max-w-2xl relative z-10 rounded-[2rem] shadow-2xl overflow-hidden border border-emerald-500/10 flex flex-col max-h-[90vh]"
+              key={action.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.06 }}
+              onClick={() => navigate(action.path)}
+              className="group relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-lg hover:shadow-gray-200/50 dark:hover:shadow-black/20 transition-all duration-200 cursor-pointer"
             >
-              <div className="p-8 pb-4 border-b border-surface-container-high flex justify-between items-start">
-                <div>
-                  <h3 className="text-2xl font-extrabold text-on-surface mb-1">{selectedMessage.subject}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-primary bg-primary-container/20 px-2 py-0.5 rounded">
-                      {selectedMessage.name || 'Anonim'}
-                    </span>
-                  </div>
+              <div className="flex items-center gap-4">
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white shadow-sm`}>
+                  {icons[action.icon as keyof typeof icons]}
                 </div>
-                <button onClick={() => setSelectedMessage(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-              <div className="p-8 overflow-y-auto flex-1">
-                <div className="bg-surface-container-low/50 p-6 rounded-2xl border border-surface-container-high mb-6 text-on-surface leading-relaxed whitespace-pre-wrap font-medium">
-                  {selectedMessage.message}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{action.label}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{action.desc}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-surface-container-lowest dark:bg-emerald-900 border border-secondary-container rounded-xl">
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Email</p>
-                    <p className="text-sm font-bold text-on-surface">{selectedMessage.email}</p>
-                  </div>
-                  <div className="p-4 bg-surface-container-lowest dark:bg-emerald-900 border border-secondary-container rounded-xl">
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Telepon</p>
-                    <p className="text-sm font-bold text-on-surface">{selectedMessage.phone || '-'}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="p-8 pt-4 bg-surface-container-low/30 border-t border-surface-container-high flex gap-4">
-                <button 
-                  onClick={() => handleReplyWA(selectedMessage.phone, selectedMessage.name)}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-4 rounded-2xl font-extrabold shadow-lg shadow-emerald-500/20 transition-all hover:scale-[1.02]"
-                >
-                  <span className="material-symbols-outlined">chat</span>
-                  Balas via WhatsApp
-                </button>
-                <button 
-                    onClick={() => handleReplyEmail(selectedMessage.email, selectedMessage.subject, selectedMessage.name)}
-                    className="flex-1 flex items-center justify-center gap-2 gradient-btn text-white py-4 rounded-2xl font-extrabold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
-                  >
-                  <span className="material-symbols-outlined">mail</span>
-                  Balas via Email
-                </button>
+                <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
               </div>
             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+      </div>
 
-      <AnimatePresence>
-        {toast && (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="fixed bottom-8 right-8 z-[110] bg-emerald-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-emerald-400/20">
-            <span className="material-symbols-outlined text-emerald-400">check_circle</span>
-            <span className="font-bold text-sm">{toast}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {recentMessages.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600" />
+              <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Pesan Kontak Terbaru</h2>
+            </div>
+            <button
+              onClick={() => navigate('/admin/contact')}
+              className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+            >
+              Lihat Semua
+            </button>
+          </div>
+          <div className="space-y-3">
+            {recentMessages.slice(0, 5).map((msg, i) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.04 }}
+                className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-md transition-all cursor-pointer"
+                onClick={() => navigate('/admin/contact')}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${
+                    !msg.isRead
+                      ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm'
+                      : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'
+                  }`}>
+                    {msg.name?.charAt(0) || '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className={`text-sm truncate ${!msg.isRead ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-600 dark:text-gray-400'}`}>
+                          {msg.name || 'Tanpa Nama'}
+                        </p>
+                        {!msg.isRead && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap shrink-0">
+                        {new Date(msg.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">{msg.email}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+                      {msg.message}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
