@@ -129,14 +129,14 @@ const ExperiencePage: React.FC = () => {
                         </div>
 
                         {/* YEAR TABS */}
-                        <div className="flex justify-center gap-4 mb-14 flex-wrap">
+                        <div className="flex justify-center gap-2 mb-12 flex-wrap">
                             {years.map((year) => (
                                 <button
                                     key={year}
                                     onClick={() => setActiveYear(year)}
-                                    className={`px-8 py-3 rounded-2xl font-bold transition-all duration-300 ${activeYear === year
-                                        ? "bg-emerald-600 text-white shadow-xl scale-105"
-                                        : "bg-white text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-100 shadow-sm"
+                                    className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 ${activeYear === year
+                                        ? "bg-emerald-600 text-white shadow-md"
+                                        : "text-gray-500 hover:text-emerald-600 hover:bg-emerald-50"
                                         }`}
                                 >
                                     {year}
@@ -145,14 +145,14 @@ const ExperiencePage: React.FC = () => {
                         </div>
 
                         {/* LOGO GRID */}
-                        <div className="flex justify-center min-h-[200px]">
-                            <div className="flex flex-wrap justify-center items-center gap-16 reveal-up">
+                        <div className="flex justify-center min-h-[150px]">
+                            <div className="flex flex-wrap justify-center items-center gap-12 reveal-up">
                                 {(groupedData[activeYear] || []).map((logo, i) => (
                                     <div key={i} className="group relative">
                                         <img
                                             src={logo.src}
                                             alt={logo.alt}
-                                            className="h-24 md:h-32 object-contain transition-all duration-500"
+                                            className="h-20 md:h-24 object-contain transition-all duration-500"
                                         />
                                         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[10px] px-3 py-1 rounded-full whitespace-nowrap font-bold uppercase tracking-widest">
                                             {logo.alt}
