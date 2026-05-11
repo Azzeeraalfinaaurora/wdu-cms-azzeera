@@ -18,16 +18,10 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   const saveColor = (color: string) => {
     if (!editor) return;
     
-    // Pastikan editor fokus dan apply warna
+    // Apply color and keep focus
     editor.chain().focus().setColor(color).run();
     
-    // Dapatkan HTML terbaru setelah warna berubah
-    setTimeout(() => {
-      const html = editor.getHTML();
-      onChange(html);
-    }, 0);
-    
-    // Update input text
+    // Update input text manually
     if (colorTextRef.current) colorTextRef.current.value = color;
   };
   
@@ -47,6 +41,13 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+    },
+    onSelectionUpdate: ({ editor }) => {
+      // Sync color input when selection changes
+      const currentColor = editor.getAttributes('textStyle').color;
+      if (colorTextRef.current) {
+        colorTextRef.current.value = currentColor || '';
+      }
     },
   });
 
@@ -95,68 +96,69 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         
         <div className="flex items-center gap-1.5 px-2 py-1 bg-surface-container-high/30 rounded-lg">
           <div className="flex items-center gap-1">
-         {[
-               { color: '#000000', title: 'Black' },
-               { color: '#059669', title: 'Emerald' },
-               { color: '#2563eb', title: 'Blue' },
-               { color: '#dc2626', title: 'Red' },
-               { color: '#475569', title: 'Slate' },
-             ].map((p) => (
-               <button
-                 key={p.color}
-                 onClick={() => {
-                   editor.chain().focus().setColor(p.color).run();
-                   onChange(editor.getHTML());
-                 }}
-                 className={`w-4 h-4 rounded-full border border-white/20 shadow-sm transition-transform hover:scale-125 active:scale-90 ${
-                   editor.getAttributes('textStyle').color === p.color ? 'ring-2 ring-primary ring-offset-1' : ''
-                 }`}
-                 style={{ backgroundColor: p.color }}
-                 title={p.title}
-               />
-             ))}
+            {[
+              { color: '#000000', title: 'Black' },
+              { color: '#ffffff', title: 'White' },
+              { color: '#059669', title: 'Emerald' },
+              { color: '#2563eb', title: 'Blue' },
+              { color: '#dc2626', title: 'Red' },
+              { color: '#475569', title: 'Slate' },
+            ].map((p) => (
+              <button
+                key={p.color}
+                onClick={() => {
+                  editor.chain().focus().setColor(p.color).run();
+                }}
+                className={`w-4 h-4 rounded-full border border-white/20 shadow-sm transition-transform hover:scale-125 active:scale-90 ${
+                  editor.getAttributes('textStyle').color === p.color ? 'ring-2 ring-primary ring-offset-1' : ''
+                }`}
+                style={{ backgroundColor: p.color }}
+                title={p.title}
+              />
+            ))}
           </div>
           
           <div className="w-px h-4 bg-outline-variant/20 mx-1" />
            
           <div className="relative group/color flex items-center gap-1" title="Custom Color">
-             <input
-               type="color"
-               onChange={(event: any) => {
-                 const val = event.target.value;
-                 saveColor(val);
-               }}
-               value={editor.getAttributes('textStyle').color || '#000000'}
-               className="w-5 h-5 p-0 border-0 cursor-pointer bg-transparent"
-             />
-             <input
-               ref={colorTextRef}
-               type="text"
-               placeholder="#000000"
-               maxLength={7}
-               onKeyDown={(e: any) => {
-                 if (e.key === 'Enter') {
-                   const val = e.target.value;
-                   if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-                     saveColor(val);
-                   }
-                 }
-               }}
-               className="w-16 h-5 text-xs px-1 border border-outline-variant/30 rounded bg-transparent text-outline placeholder:text-outline/50 focus:outline-none focus:border-primary"
-             />
-             <button
-               onClick={() => {
-                 const val = colorTextRef.current?.value;
-                 if (val && /^#[0-9A-Fa-f]{6}$/.test(val)) {
-                   saveColor(val);
-                 }
-               }}
-               className="px-2 h-5 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors"
-               title="Apply Color"
-             >
-               Save
-             </button>
-           </div>
+            <input
+              type="color"
+              onChange={(event: any) => {
+                const val = event.target.value;
+                saveColor(val);
+              }}
+              value={editor.getAttributes('textStyle').color || '#000000'}
+              className="w-5 h-5 p-0 border-0 cursor-pointer bg-transparent"
+            />
+            <input
+              ref={colorTextRef}
+              type="text"
+              placeholder="#000000"
+              maxLength={7}
+              defaultValue={editor.getAttributes('textStyle').color || ''}
+              onKeyDown={(e: any) => {
+                if (e.key === 'Enter') {
+                  const val = e.target.value;
+                  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    saveColor(val);
+                  }
+                }
+              }}
+              className="w-16 h-5 text-xs px-1 border border-outline-variant/30 rounded bg-transparent text-outline placeholder:text-outline/50 focus:outline-none focus:border-primary"
+            />
+            <button
+              onClick={() => {
+                const val = colorTextRef.current?.value;
+                if (val && /^#[0-9A-Fa-f]{6}$/.test(val)) {
+                  saveColor(val);
+                }
+              }}
+              className="px-2 h-5 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+              title="Apply Color"
+            >
+              Save
+            </button>
+          </div>
 
           <button
             onClick={() => editor.chain().focus().unsetColor().run()}
