@@ -71,6 +71,12 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     if (colorTextRef.current) colorTextRef.current.value = color;
   };
 
+  // Sync with global dark mode on mount
+  useEffect(() => {
+    const isGlobalDark = document.documentElement.classList.contains('dark');
+    setIsDarkEditor(isGlobalDark);
+  }, []);
+
   if (!editor) return null;
 
   const MenuButton = ({ onClick, isActive, icon, title }: any) => (
@@ -86,9 +92,9 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   );
 
   return (
-    <div className={`w-full border border-outline-variant/30 rounded-xl overflow-hidden transition-all ${isDarkEditor ? 'bg-slate-900' : 'bg-white'} focus-within:ring-2 focus-within:ring-primary/20`}>
+    <div className={`w-full border border-outline-variant/30 rounded-xl overflow-hidden transition-all ${isDarkEditor ? 'bg-zinc-900 shadow-inner' : 'bg-white'} focus-within:ring-2 focus-within:ring-primary/20`}>
       {/* Toolbar */}
-      <div className={`flex flex-wrap gap-1 p-2 border-b border-outline-variant/10 ${isDarkEditor ? 'bg-slate-800' : 'bg-surface-container-low'}`}>
+      <div className={`flex flex-wrap gap-1 p-2 border-b border-outline-variant/10 ${isDarkEditor ? 'bg-zinc-800' : 'bg-slate-50'}`}>
         <MenuButton 
           onClick={() => editor.chain().focus().toggleBold().run()} 
           isActive={editor.isActive('bold')} 
@@ -154,7 +160,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
               className="w-16 h-5 text-xs px-1 border border-outline-variant/30 rounded bg-transparent text-outline placeholder:text-outline/50 focus:outline-none focus:border-primary"
             />
           </div>
-
+ 
           <button
             onClick={() => editor.chain().focus().unsetColor().run()}
             className="p-1 hover:bg-surface-container-high rounded transition-colors text-outline hover:text-red-500"
@@ -163,7 +169,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
             <span className="material-symbols-outlined text-[16px]">format_color_reset</span>
           </button>
         </div>
-
+ 
         <div className="w-px h-6 bg-outline-variant/20 mx-1 my-auto" />
         
         <MenuButton 
@@ -186,7 +192,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         />
         
         <div className="w-px h-6 bg-outline-variant/20 mx-1 my-auto" />
-
+ 
         <MenuButton 
           onClick={() => editor.chain().focus().setTextAlign('left').run()} 
           isActive={editor.isActive({ textAlign: 'left' })} 
@@ -201,7 +207,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         />
         
         <div className="w-px h-6 bg-outline-variant/20 mx-1 my-auto" />
-
+ 
         <MenuButton 
           onClick={() => editor.chain().focus().undo().run()} 
           icon="undo" 
@@ -212,12 +218,12 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           icon="redo" 
           title="Redo"
         />
-
+ 
         <div className="flex-1" />
-
+ 
         <button
           onClick={() => setIsDarkEditor(!isDarkEditor)}
-          className={`p-2 rounded-md transition-all ${isDarkEditor ? 'text-amber-400 bg-slate-700' : 'text-slate-400 hover:bg-slate-100'}`}
+          className={`p-2 rounded-md transition-all ${isDarkEditor ? 'text-amber-400 bg-zinc-700 shadow-inner' : 'text-slate-400 hover:bg-slate-200'}`}
           title={isDarkEditor ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           <span className="material-symbols-outlined text-sm block leading-none">
@@ -225,12 +231,14 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           </span>
         </button>
       </div>
-
-      {/* Editor Content */}
-      <div className={`p-4 min-h-[150px] max-w-4xl focus:outline-none tiptap-content ${isDarkEditor ? 'prose-invert' : ''}`}>
-        <EditorContent editor={editor} />
+ 
+      {/* Editor Content Area */}
+      <div className={`p-6 min-h-[200px] transition-colors duration-300 ${isDarkEditor ? 'bg-zinc-900' : 'bg-slate-50'}`}>
+        <div className={`max-w-4xl mx-auto focus:outline-none tiptap-content ${isDarkEditor ? 'prose-invert' : ''}`}>
+          <EditorContent editor={editor} />
+        </div>
       </div>
-
+ 
       <style>{`
         .tiptap-content .ProseMirror:focus {
           outline: none;
@@ -242,19 +250,24 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           pointer-events: none;
           height: 0;
         }
-        /* Highlight white text in light mode so it doesn't disappear */
+        /* Strong highlight for white text in light mode */
         ${!isDarkEditor ? `
           .tiptap-content .ProseMirror span[style*="color: #ffffff"],
           .tiptap-content .ProseMirror span[style*="color:#ffffff"],
           .tiptap-content .ProseMirror span[style*="color: rgb(255, 255, 255)"] {
-            background-color: rgba(0,0,0,0.05);
-            border-radius: 2px;
-            padding: 0 2px;
+            background-color: #334155; /* slate-700 */
+            color: #ffffff !important;
+            border-radius: 4px;
+            padding: 2px 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           }
         ` : ''}
         
         .tiptap-content .ProseMirror {
-          color: ${isDarkEditor ? '#ffffff' : 'inherit'};
+          min-height: 150px;
+          color: ${isDarkEditor ? '#ffffff' : '#334155'};
+          font-size: 1.1rem;
+          line-height: 1.6;
         }
       `}</style>
     </div>
