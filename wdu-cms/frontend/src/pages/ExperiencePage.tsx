@@ -58,6 +58,21 @@ const ExperiencePage: React.FC = () => {
     };
 
     useEffect(() => {
+        const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+        
+        if (isPreview) {
+            const previewData = sessionStorage.getItem('preview_pengalaman');
+            if (previewData) {
+                try {
+                    const parsed = JSON.parse(previewData);
+                    setCms(parsed);
+                    return;
+                } catch (e) {
+                    console.error('Error parsing preview data', e);
+                }
+            }
+        }
+
         api.get('/pages/pengalaman').then(res => setCms(res.data?.sections || {})).catch(() => {});
         api.get('/projects').then(res => setProjects(res.data)).catch(() => {});
     }, []);
@@ -120,7 +135,7 @@ const ExperiencePage: React.FC = () => {
 
                         {/* Title */}
                         <div className="text-center max-w-3xl mx-auto mb-8">
-                            <h2 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
+                            <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
                                 {get('experience_title', 'Collaboration Experience')}
                             </h2>
                             <p className="text-lg text-gray-600">

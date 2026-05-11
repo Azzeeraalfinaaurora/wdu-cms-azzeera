@@ -8,9 +8,28 @@ const AboutPage = () => {
   const [siteConfig, setSiteConfig] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    api.get('/pages/tentang-kami')
-      .then(res => setCms(res.data?.sections || {}))
-      .catch(() => {});
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+    
+    if (isPreview) {
+      const previewData = sessionStorage.getItem('preview_tentang-kami');
+      if (previewData) {
+        try {
+          const parsed = JSON.parse(previewData);
+          setCms(parsed);
+          // Still fetch config as it's separate
+        } catch (e) {
+          console.error('Error parsing preview data', e);
+        }
+      } else {
+        api.get('/pages/tentang-kami')
+          .then(res => setCms(res.data?.sections || {}))
+          .catch(() => {});
+      }
+    } else {
+      api.get('/pages/tentang-kami')
+        .then(res => setCms(res.data?.sections || {}))
+        .catch(() => {});
+    }
 
     api.get('/config')
       .then(res => {
@@ -43,7 +62,7 @@ const AboutPage = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/90 via-emerald-900/60 to-transparent"></div>
         </div>
         <div className="relative z-10 text-center px-6 max-w-4xl mx-auto mt-20">
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tight mb-6 reveal-up [&>p]:m-0">
+          <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight mb-6 reveal-up [&>p]:m-0">
             <span dangerouslySetInnerHTML={{ __html: get('hero_title', 'Your Data Is Our Business') }} />
           </h1>
           <div 

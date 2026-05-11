@@ -5,7 +5,7 @@ import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { useRef } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 interface TiptapEditorProps {
   content: string;
@@ -14,16 +14,8 @@ interface TiptapEditorProps {
 
 export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   const colorTextRef = useRef<HTMLInputElement>(null);
-  
-  const saveColor = (color: string) => {
-    if (!editor) return;
-    
-    // Apply color and keep focus
-    editor.chain().focus().setColor(color).run();
-    
-    // Update input text manually
-    if (colorTextRef.current) colorTextRef.current.value = color;
-  };
+  const isUpdatingRef = useRef(false);
+  const [isDarkEditor, setIsDarkEditor] = useState(false);
   
   const editor = useEditor({
     extensions: [
@@ -38,18 +30,46 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         types: ['heading', 'paragraph'],
       }),
     ],
-    content,
+    content: content || '',
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      isUpdatingRef.current = true;
+      const html = editor.getHTML();
+      onChange(html);
+      // Reset the flag after a short delay to allow React state to propagate
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 10);
     },
     onSelectionUpdate: ({ editor }) => {
-      // Sync color input when selection changes
       const currentColor = editor.getAttributes('textStyle').color;
       if (colorTextRef.current) {
         colorTextRef.current.value = currentColor || '';
       }
     },
+    onCreate: ({ editor }) => {
+      const currentColor = editor.getAttributes('textStyle').color;
+      if (colorTextRef.current) {
+        colorTextRef.current.value = currentColor || '';
+      }
+    }
   });
+
+  // Keep editor content in sync with external changes, but avoid loops during typing
+  useEffect(() => {
+    if (editor && content !== undefined && !isUpdatingRef.current) {
+      const currentHTML = editor.getHTML();
+      // Only set content if it's actually different to avoid cursor jumps and state loss
+      if (content !== currentHTML) {
+        editor.commands.setContent(content);
+      }
+    }
+  }, [content, editor]);
+
+  const saveColor = (color: string) => {
+    if (!editor) return;
+    editor.chain().focus().setColor(color).run();
+    if (colorTextRef.current) colorTextRef.current.value = color;
+  };
 
   if (!editor) return null;
 
@@ -66,9 +86,9 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
   );
 
   return (
-    <div className="w-full border border-outline-variant/30 rounded-xl overflow-hidden bg-white dark:bg-emerald-950/20 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+    <div className={`w-full border border-outline-variant/30 rounded-xl overflow-hidden transition-all ${isDarkEditor ? 'bg-slate-900' : 'bg-white'} focus-within:ring-2 focus-within:ring-primary/20`}>
       {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 p-2 bg-surface-container-low border-b border-outline-variant/10">
+      <div className={`flex flex-wrap gap-1 p-2 border-b border-outline-variant/10 ${isDarkEditor ? 'bg-slate-800' : 'bg-surface-container-low'}`}>
         <MenuButton 
           onClick={() => editor.chain().focus().toggleBold().run()} 
           isActive={editor.isActive('bold')} 
@@ -87,12 +107,6 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           icon="format_underlined" 
           title="Underline"
         />
-        <MenuButton 
-          onClick={() => editor.chain().focus().toggleStrike().run()} 
-          isActive={editor.isActive('strikethrough')} 
-          icon="strikethrough_s" 
-          title="Strikethrough"
-        />
         
         <div className="flex items-center gap-1.5 px-2 py-1 bg-surface-container-high/30 rounded-lg">
           <div className="flex items-center gap-1">
@@ -106,9 +120,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
             ].map((p) => (
               <button
                 key={p.color}
-                onClick={() => {
-                  editor.chain().focus().setColor(p.color).run();
-                }}
+                onClick={() => saveColor(p.color)}
                 className={`w-4 h-4 rounded-full border border-white/20 shadow-sm transition-transform hover:scale-125 active:scale-90 ${
                   editor.getAttributes('textStyle').color === p.color ? 'ring-2 ring-primary ring-offset-1' : ''
                 }`}
@@ -123,10 +135,7 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           <div className="relative group/color flex items-center gap-1" title="Custom Color">
             <input
               type="color"
-              onChange={(event: any) => {
-                const val = event.target.value;
-                saveColor(val);
-              }}
+              onChange={(event: any) => saveColor(event.target.value)}
               value={editor.getAttributes('textStyle').color || '#000000'}
               className="w-5 h-5 p-0 border-0 cursor-pointer bg-transparent"
             />
@@ -139,25 +148,11 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
               onKeyDown={(e: any) => {
                 if (e.key === 'Enter') {
                   const val = e.target.value;
-                  if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-                    saveColor(val);
-                  }
+                  if (/^#[0-9A-Fa-f]{6}$/.test(val)) saveColor(val);
                 }
               }}
               className="w-16 h-5 text-xs px-1 border border-outline-variant/30 rounded bg-transparent text-outline placeholder:text-outline/50 focus:outline-none focus:border-primary"
             />
-            <button
-              onClick={() => {
-                const val = colorTextRef.current?.value;
-                if (val && /^#[0-9A-Fa-f]{6}$/.test(val)) {
-                  saveColor(val);
-                }
-              }}
-              className="px-2 h-5 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors"
-              title="Apply Color"
-            >
-              Save
-            </button>
           </div>
 
           <button
@@ -208,27 +203,6 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         <div className="w-px h-6 bg-outline-variant/20 mx-1 my-auto" />
 
         <MenuButton 
-          onClick={() => editor.chain().focus().toggleBulletList().run()} 
-          isActive={editor.isActive('bulletList')} 
-          icon="format_list_bulleted" 
-          title="Bullet List"
-        />
-        <MenuButton 
-          onClick={() => editor.chain().focus().toggleOrderedList().run()} 
-          isActive={editor.isActive('orderedList')} 
-          icon="format_list_numbered" 
-          title="Ordered List"
-        />
-        
-        <div className="w-px h-6 bg-outline-variant/20 mx-1 my-auto" />
-
-        <MenuButton 
-          onClick={() => editor.chain().focus().toggleBlockquote().run()} 
-          isActive={editor.isActive('blockquote')} 
-          icon="format_quote" 
-          title="Blockquote"
-        />
-        <MenuButton 
           onClick={() => editor.chain().focus().undo().run()} 
           icon="undo" 
           title="Undo"
@@ -238,10 +212,22 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           icon="redo" 
           title="Redo"
         />
+
+        <div className="flex-1" />
+
+        <button
+          onClick={() => setIsDarkEditor(!isDarkEditor)}
+          className={`p-2 rounded-md transition-all ${isDarkEditor ? 'text-amber-400 bg-slate-700' : 'text-slate-400 hover:bg-slate-100'}`}
+          title={isDarkEditor ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          <span className="material-symbols-outlined text-sm block leading-none">
+            {isDarkEditor ? 'light_mode' : 'dark_mode'}
+          </span>
+        </button>
       </div>
 
       {/* Editor Content */}
-      <div className="p-4 min-h-[150px] max-w-4xl focus:outline-none tiptap-content">
+      <div className={`p-4 min-h-[150px] max-w-4xl focus:outline-none tiptap-content ${isDarkEditor ? 'prose-invert' : ''}`}>
         <EditorContent editor={editor} />
       </div>
 
@@ -255,6 +241,20 @@ export default function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           color: #adb5bd;
           pointer-events: none;
           height: 0;
+        }
+        /* Highlight white text in light mode so it doesn't disappear */
+        ${!isDarkEditor ? `
+          .tiptap-content .ProseMirror span[style*="color: #ffffff"],
+          .tiptap-content .ProseMirror span[style*="color:#ffffff"],
+          .tiptap-content .ProseMirror span[style*="color: rgb(255, 255, 255)"] {
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 2px;
+            padding: 0 2px;
+          }
+        ` : ''}
+        
+        .tiptap-content .ProseMirror {
+          color: ${isDarkEditor ? '#ffffff' : 'inherit'};
         }
       `}</style>
     </div>

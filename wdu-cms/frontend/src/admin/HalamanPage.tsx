@@ -72,7 +72,6 @@ const PAGE_META: Record<string, { label: string; fields: { key: string; label: s
       { key: 'cta_text', label: 'Teks Tombol Aksi', type: 'text', placeholder: 'Mulai Sekarang', group: 'Informasi Tambahan' },
       { key: 'intro_title', label: 'Judul Perkenalan', type: 'textarea', placeholder: 'Jelajahi beragam solusi terbaik...', group: 'Pengantar Layanan' },
       { key: 'intro_body', label: 'Deskripsi Perkenalan', type: 'textarea', placeholder: 'Kami menyediakan ekosistem layanan...', group: 'Pengantar Layanan' },
-      { key: 'intro_image', label: 'Gambar Ilustrasi', type: 'image', placeholder: 'URL Gambar', group: 'Pengantar Layanan' },
     ]
   },
   'pengalaman': {
@@ -329,7 +328,7 @@ export default function HalamanPage() {
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
               onClick={() => setEditingPage(null)}
-              className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/20 dark:bg-black/60 backdrop-blur-sm"
             />
             
             {/* Drawer */}
@@ -338,17 +337,17 @@ export default function HalamanPage() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="bg-slate-50 w-full max-w-2xl relative z-10 shadow-2xl flex flex-col h-full border-l border-slate-200"
+              className="bg-slate-50 dark:bg-zinc-950 w-full max-w-2xl relative z-10 shadow-2xl flex flex-col h-full border-l border-slate-200 dark:border-zinc-800"
             >
               {/* Drawer Header */}
-              <div className="px-8 py-6 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+              <div className="px-8 py-6 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between sticky top-0 z-20 shadow-sm">
                 <div>
-                  <h2 className="text-xl font-black text-slate-800">Edit Halaman</h2>
-                  <p className="text-sm font-medium text-emerald-600 mt-0.5">{editingPage.title}</p>
+                  <h2 className="text-xl font-black text-slate-800 dark:text-white">Edit Halaman</h2>
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mt-0.5">{editingPage.title}</p>
                 </div>
                 <button 
                   onClick={() => setEditingPage(null)} 
-                  className="w-10 h-10 rounded-full hover:bg-slate-100 transition-colors flex items-center justify-center text-slate-400 hover:text-slate-600"
+                  className="w-10 h-10 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -358,9 +357,9 @@ export default function HalamanPage() {
               <div className="flex-1 overflow-y-auto p-8 space-y-6">
                 
                 {/* SEO Card */}
-                <div className="bg-white dark:bg-emerald-950/40 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-emerald-800/30">
+                <div className="bg-white dark:bg-zinc-900/50 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-zinc-800">
                   <div className="flex items-center gap-3 mb-8 pb-4 border-b border-slate-100 dark:border-emerald-800/30">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
                       <span className="material-symbols-outlined">search</span>
                     </div>
                     <div>
@@ -370,7 +369,7 @@ export default function HalamanPage() {
                   </div>
                   
                   <div className="space-y-6">
-                    <div className="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-900/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
+                    <div className="flex items-center gap-4 bg-emerald-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-emerald-100 dark:border-zinc-800">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData._isPublished ? 'bg-emerald-500 text-white' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'}`}>
                         <span className="material-symbols-outlined text-lg">{formData._isPublished ? 'public' : 'edit_note'}</span>
                       </div>
@@ -383,21 +382,21 @@ export default function HalamanPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 dark:text-emerald-500/50 uppercase tracking-[0.2em] ml-1">Judul Meta (Tab Browser)</label>
+                      <label className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-[0.2em] ml-1">Judul Meta (Tab Browser)</label>
                       <input
                         value={formData._metaTitle || ''}
                         onChange={e => setFormData(p => ({ ...p, _metaTitle: e.target.value }))}
-                        className="w-full bg-slate-50 dark:bg-emerald-900/20 border border-slate-200 dark:border-emerald-800/30 rounded-xl px-4 py-3 text-sm font-medium focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white"
+                        className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-4 text-sm font-medium focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white"
                         placeholder="Contoh: Beranda | Wahana Data Utama"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 dark:text-emerald-500/50 uppercase tracking-[0.2em] ml-1">Deskripsi Singkat (Meta Description)</label>
+                      <label className="text-[10px] font-black text-slate-400 dark:text-zinc-500 uppercase tracking-[0.2em] ml-1">Deskripsi Singkat (Meta Description)</label>
                       <textarea
                         value={formData._metaDesc || ''}
                         onChange={e => setFormData(p => ({ ...p, _metaDesc: e.target.value }))}
-                        className="w-full bg-slate-50 dark:bg-emerald-900/20 border border-slate-200 dark:border-emerald-800/30 rounded-xl px-4 py-3 text-sm font-medium focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white resize-none"
+                        className="w-full bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm font-medium focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all dark:text-white resize-none"
                         rows={3}
                         placeholder="Masukkan penjelasan singkat yang akan tampil di hasil pencarian Google..."
                       />
@@ -407,7 +406,7 @@ export default function HalamanPage() {
 
                 {/* Dynamic Grouped Field Cards */}
                 {Object.entries(getGroupedFields(editingPage.slug)).map(([groupName, fields]) => (
-                  <div key={groupName} className="bg-white dark:bg-emerald-950/20 rounded-[2rem] p-8 shadow-sm border border-slate-200 dark:border-emerald-800/30 relative overflow-hidden group">
+                  <div key={groupName} className="bg-white dark:bg-zinc-900/50 rounded-[2rem] p-8 shadow-sm border border-slate-200 dark:border-zinc-800 relative overflow-hidden group">
                     <div className="flex items-center gap-4 mb-8 pb-4 border-b border-slate-100 dark:border-emerald-800/30 relative z-10">
                       <div className="w-12 h-12 rounded-[1rem] bg-emerald-50 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 group-hover:bg-primary group-hover:text-white transition-all duration-500">
                         <span className="material-symbols-outlined text-2xl">
@@ -485,11 +484,13 @@ export default function HalamanPage() {
               </div>
 
               {/* Action Bar Footer */}
-              <div className="p-8 bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-emerald-800/30 sticky bottom-0 z-20 shadow-2xl">
+              <div className="p-8 bg-white dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 sticky bottom-0 z-20 shadow-2xl">
                 <div className="flex gap-4">
                   <button
                     onClick={() => {
                       const url = editingPage.slug === 'home' ? '/' : `/${editingPage.slug}`;
+                      // Save current unsaved data to sessionStorage for the preview tab to pick up
+                      sessionStorage.setItem(`preview_${editingPage.slug}`, JSON.stringify(formData));
                       window.open(url + '?preview=true', '_blank');
                     }}
                     className="flex-1 py-4 px-6 border-2 border-emerald-600 text-emerald-600 dark:text-primary dark:border-primary bg-white dark:bg-transparent rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all flex items-center justify-center gap-2 active:scale-95"

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Footer from '../components/Footer';
 import api from '../utils/api';
 import { Client } from '../services/client';
@@ -26,14 +26,27 @@ const HomePage = () => {
 
   // Fetch CMS content for home page
   useEffect(() => {
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+    
+    if (isPreview) {
+      const previewData = sessionStorage.getItem('preview_home');
+      if (previewData) {
+        try {
+          const parsed = JSON.parse(previewData);
+          setPageContent(parsed);
+          return;
+        } catch (e) {
+          console.error('Error parsing preview data', e);
+        }
+      }
+    }
+
     api.get('/pages/home')
       .then((res: any) => {
         const sections = res.data?.sections || {};
         setPageContent(sections);
       })
-      .catch(() => {
-        // silently fall back to hardcoded defaults
-      });
+      .catch(() => {});
 
     api.get('/services')
       .then((res: any) => {
@@ -227,7 +240,7 @@ const HomePage = () => {
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-8 w-full">
           <div className="w-full">
-            <h1 className="text-5xl md:text-7xl font-extrabold text-white leading-[1.1] mb-8 tracking-tight reveal-left [&>p]:m-0">
+            <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.1] mb-8 tracking-tight reveal-left [&>p]:m-0">
               {pageContent['hero_title'] ? (
                 <span dangerouslySetInnerHTML={{ __html: pageContent['hero_title'] }} />
               ) : (
@@ -250,7 +263,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-6 md:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-6">
             <div className="max-w-2xl reveal-left">
-              <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight">
+              <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight leading-tight">
                 {cms('services_title', 'Solusi terbaik untuk Anda!')}
               </h2>
               <p className="text-lg text-slate-600 font-medium">{cms('services_subtitle', 'Kami merancang layanan yang adaptif untuk tantangan industri digital saat ini.')}</p>
@@ -447,8 +460,6 @@ const HomePage = () => {
                   if (gallerySliderRef.current) {
                     const slider = gallerySliderRef.current;
                     const containerWidth = slider.clientWidth;
-                    const itemsPerView = window.innerWidth < 768 ? 1 : 3;
-                    const originalWidth = slider.scrollWidth / 3;
                     const targetScroll = (slider.scrollWidth / 3) + (i * containerWidth);
                     
                     slider.scrollTo({ left: targetScroll, behavior: 'smooth' });

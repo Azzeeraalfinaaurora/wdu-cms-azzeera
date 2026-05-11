@@ -26,6 +26,21 @@ const ServicesPage = () => {
   ];
 
   useEffect(() => {
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+    
+    if (isPreview) {
+      const previewData = sessionStorage.getItem('preview_layanan');
+      if (previewData) {
+        try {
+          const parsed = JSON.parse(previewData);
+          setCms(parsed);
+          return;
+        } catch (e) {
+          console.error('Error parsing preview data', e);
+        }
+      }
+    }
+
     api.get('/pages/layanan').then(res => setCms(res.data?.sections || {})).catch(() => {});
     api.get('/services').then(res => setServices(res.data.filter((s: Service) => s.isActive))).catch(() => {});
   }, []);
@@ -48,7 +63,7 @@ const ServicesPage = () => {
       <header className="relative py-24 md:pb-32 bg-white">
         <div className="max-w-7xl mx-auto px-8 grid md:grid-cols-2 gap-12 items-center">
           <div className="z-10 reveal-left">
-            <h1 className="text-6xl md:text-8xl font-black text-slate-900 leading-[1.05] tracking-tighter mb-8 [&>p]:m-0">
+            <h1 className="text-6xl md:text-8xl font-bold text-slate-900 leading-[1.05] tracking-tighter mb-8 [&>p]:m-0">
               <span dangerouslySetInnerHTML={{ __html: get('hero_title', 'Solusi Data Terpadu') }} />
             </h1>
             <div 
@@ -69,23 +84,20 @@ const ServicesPage = () => {
       </header>
 
       {/* Section 2: Intro */}
-      <section className="py-32 bg-slate-50">
+      <section className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-8">
-          <div className="flex flex-col md:flex-row gap-16 items-start">
-            <div className="md:w-1/3 reveal-left">
-              <span className="font-bold text-emerald-600 tracking-[0.3em] uppercase text-xs block mb-6">Layanan Kami</span>
-              <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-tight [&>p]:m-0">
+          <div className="max-w-3xl">
+            <div className="reveal-left">
+              <span className="font-bold text-emerald-600 tracking-[0.2em] uppercase text-[10px] block mb-4">Layanan Kami</span>
+              <h2 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tight leading-tight mb-6 [&>p]:m-0">
                 <span dangerouslySetInnerHTML={{ __html: get('intro_title', 'Jelajahi beragam solusi terbaik!') }} />
               </h2>
             </div>
-            <div className="md:w-2/3 reveal-right space-y-10">
+            <div className="reveal-up delay-200">
               <div 
-                className="text-2xl text-slate-600 leading-relaxed font-medium space-y-4"
+                className="text-lg md:text-xl text-slate-600 leading-relaxed font-medium space-y-4"
                 dangerouslySetInnerHTML={{ __html: get('intro_body', 'Kami menyediakan ekosistem layanan komprehensif yang dirancang untuk menjawab tantangan data modern.') }}
               />
-              <div className="pt-4">
-                <img className="w-full h-[480px] object-cover object-center rounded-[2rem] shadow-xl transition-transform duration-700 hover:scale-[1.01]" alt="Collaboration" src={get('intro_image', 'https://wahanadata.co.id/wp-content/uploads/2025/01/433319d2-e1de-4c4f-9a80-b83df6470507-scaled.jpg')} />
-              </div>
             </div>
           </div>
         </div>
